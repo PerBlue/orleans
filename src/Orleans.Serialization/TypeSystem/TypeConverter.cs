@@ -495,20 +495,25 @@ namespace Orleans.Serialization.TypeSystem
 
         private static bool? InspectType(ITypeFilter[] filters, Type type)
         {
-            bool? result = null;
             if (type.HasElementType)
             {
-                result = Combine(result, InspectType(filters, type.GetElementType()));
-                return result;
+                return InspectType(filters, type.GetElementType());
             }
+
+            bool? result = null;
 
             foreach (var filter in filters)
             {
                 result = Combine(result, filter.IsTypeAllowed(type));
-                if (result == false)
+                if (result == true)
                 {
-                    return false;
+                    return true;
                 }
+            }
+
+            if (result == false)
+            {
+                return false;
             }
 
             if (type.IsConstructedGenericType)
@@ -527,16 +532,17 @@ namespace Orleans.Serialization.TypeSystem
 
             static bool? Combine(bool? left, bool? right)
             {
-                if (left == false || right == false)
-                {
-                    return false;
-                }
-                else if (left == true || right == true)
+                if (left == true || right == true)
                 {
                     return true;
                 }
 
-                return null;
+                if (left == null && right == null)
+                {
+                    return null;
+                }
+
+                return false;
             }
         }
 
